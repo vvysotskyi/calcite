@@ -44,6 +44,7 @@ import org.apache.calcite.runtime.Bindable;
 import org.apache.calcite.runtime.Hook;
 import org.apache.calcite.runtime.Typed;
 import org.apache.calcite.schema.ExtensibleTable;
+import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.Wrapper;
 import org.apache.calcite.schema.impl.ModifiableViewTable;
@@ -400,6 +401,21 @@ public abstract class Prepare {
 
   public RelRoot expandView(RelDataType rowType, String queryString,
       List<String> schemaPath, List<String> viewPath) {
+    throw new UnsupportedOperationException();
+  }
+
+  /**
+   * Returns a relational expression which is to be substituted for an access
+   * to a SQL view.
+   *
+   * @param rowType Row type of the view
+   * @param queryString Body of the view
+   * @param rootSchema Root schema of the schema tree
+   * @param schemaPath List of schema names wherein to find referenced tables
+   * @return Relational expression
+   */
+  public RelRoot expandView(RelDataType rowType, String queryString,
+      SchemaPlus rootSchema, List<String> schemaPath) {
     throw new UnsupportedOperationException();
   }
 

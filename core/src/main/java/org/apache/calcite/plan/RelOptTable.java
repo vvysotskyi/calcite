@@ -25,6 +25,7 @@ import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Wrapper;
 import org.apache.calcite.util.ImmutableBitSet;
 
@@ -133,6 +134,9 @@ public interface RelOptTable extends Wrapper {
      */
     RelRoot expandView(RelDataType rowType, String queryString,
         List<String> schemaPath, List<String> viewPath);
+
+    RelRoot expandView(RelDataType rowType, String queryString,
+        SchemaPlus rootSchema, List<String> schemaPath);
   }
 
   /** Contains the context needed to convert a a table into a relational

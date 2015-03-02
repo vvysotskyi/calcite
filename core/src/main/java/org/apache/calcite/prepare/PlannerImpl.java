@@ -241,6 +241,23 @@ public class PlannerImpl implements Planner {
   public class ViewExpanderImpl implements ViewExpander {
     @Override public RelRoot expandView(RelDataType rowType, String queryString,
       List<String> schemaPath, List<String> viewPath) {
+      final CalciteCatalogReader catalogReader =
+          createCatalogReader().withSchemaPath(schemaPath);
+      return expandViewHelper(queryString, catalogReader);
+    }
+
+    @Override public RelRoot expandView(RelDataType rowType, String queryString,
+      SchemaPlus rootSchema, List<String> schemaPath) {
+      // View may have different schema path than current connection.
+      final CalciteCatalogReader catalogReader = new CalciteCatalogReader(
+          CalciteSchema.from(rootSchema),
+          parserConfig.caseSensitive(),
+          CalciteSchema.from(defaultSchema).path(null),
+          typeFactory).withSchemaPath(schemaPath);
+      return expandViewHelper(queryString, catalogReader);
+    }
+
+    private RelRoot expandViewHelper(String queryString, CalciteCatalogReader catalogReader) {
       SqlParser parser = SqlParser.create(queryString, parserConfig);
       SqlNode sqlNode;
       try {
@@ -250,8 +267,6 @@ public class PlannerImpl implements Planner {
       }
 
       final SqlConformance conformance = conformance();
-      final CalciteCatalogReader catalogReader =
-          createCatalogReader().withSchemaPath(schemaPath);
       final SqlValidator validator =
           new CalciteSqlValidator(operatorTable, catalogReader, typeFactory,
               conformance);

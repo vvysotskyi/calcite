@@ -3807,7 +3807,7 @@ public class JdbcTest {
             + " rank() over (partition by \"deptno\" order by \"empid\" desc) as rd\n"
             + "from \"hr\".\"emps\"")
         .typeIs(
-            "[deptno INTEGER NOT NULL, empid INTEGER NOT NULL, commission INTEGER, RCNF INTEGER NOT NULL, RCNL INTEGER NOT NULL, R INTEGER NOT NULL, RD INTEGER NOT NULL]")
+            "[deptno INTEGER NOT NULL, empid INTEGER NOT NULL, commission INTEGER, RCNF BIGINT NOT NULL, RCNL BIGINT NOT NULL, R BIGINT NOT NULL, RD BIGINT NOT NULL]")
         .returnsUnordered(
             "deptno=10; empid=100; commission=1000; RCNF=2; RCNL=1; R=1; RD=3",
             "deptno=10; empid=110; commission=250; RCNF=3; RCNL=2; R=2; RD=2",
@@ -3822,7 +3822,7 @@ public class JdbcTest {
             + " rank() over (order by \"deptno\") as r\n"
             + "from \"hr\".\"emps\"")
         .typeIs(
-            "[deptno INTEGER NOT NULL, R INTEGER NOT NULL]")
+            "[deptno INTEGER NOT NULL, R BIGINT NOT NULL]")
         .returnsUnordered(
             "deptno=10; R=1",
             "deptno=10; R=1",
@@ -3837,7 +3837,7 @@ public class JdbcTest {
             + " rank() over (order by \"deptno\" desc) as r\n"
             + "from \"hr\".\"emps\"")
         .typeIs(
-            "[deptno INTEGER NOT NULL, R INTEGER NOT NULL]")
+            "[deptno INTEGER NOT NULL, R BIGINT NOT NULL]")
         .returnsUnordered(
             "deptno=10; R=2",
             "deptno=10; R=2",
@@ -3852,7 +3852,7 @@ public class JdbcTest {
             + " dense_rank() over (order by \"deptno\") as r\n"
             + "from \"hr\".\"emps\"")
         .typeIs(
-            "[deptno INTEGER NOT NULL, R INTEGER NOT NULL]")
+            "[deptno INTEGER NOT NULL, R BIGINT NOT NULL]")
         .returnsUnordered(
             "deptno=10; R=1",
             "deptno=10; R=1",
@@ -3867,7 +3867,7 @@ public class JdbcTest {
             + " dense_rank() over (order by \"deptno\" desc) as r\n"
             + "from \"hr\".\"emps\"")
         .typeIs(
-            "[deptno INTEGER NOT NULL, R INTEGER NOT NULL]")
+            "[deptno INTEGER NOT NULL, R BIGINT NOT NULL]")
         .returnsUnordered(
             "deptno=10; R=2",
             "deptno=10; R=2",
@@ -4131,7 +4131,7 @@ public class JdbcTest {
         .query("select rn, ntile(1) over (order by rn) l\n"
             + " from " + START_OF_GROUP_DATA)
         .typeIs(
-            "[RN INTEGER NOT NULL, L INTEGER NOT NULL]")
+            "[RN INTEGER NOT NULL, L BIGINT NOT NULL]")
         .returnsUnordered(
             "RN=1; L=1",
             "RN=2; L=1",
@@ -4151,7 +4151,7 @@ public class JdbcTest {
         .query("select rn, ntile(2) over (order by rn) l\n"
             + " from " + START_OF_GROUP_DATA)
         .typeIs(
-            "[RN INTEGER NOT NULL, L INTEGER NOT NULL]")
+            "[RN INTEGER NOT NULL, L BIGINT NOT NULL]")
         .returnsUnordered(
             "RN=1; L=1",
             "RN=2; L=1",
@@ -4270,7 +4270,7 @@ public class JdbcTest {
             + " row_number() over (partition by \"deptno\" order by \"empid\" desc) as rd\n"
             + "from \"hr\".\"emps\"")
         .typeIs(
-            "[deptno INTEGER NOT NULL, empid INTEGER NOT NULL, commission INTEGER, R INTEGER NOT NULL, RCNF INTEGER NOT NULL, RCNL INTEGER NOT NULL, R INTEGER NOT NULL, RD INTEGER NOT NULL]")
+            "[deptno INTEGER NOT NULL, empid INTEGER NOT NULL, commission INTEGER, R BIGINT NOT NULL, RCNF BIGINT NOT NULL, RCNL BIGINT NOT NULL, R BIGINT NOT NULL, RD BIGINT NOT NULL]")
         .returnsUnordered(
             "deptno=10; empid=100; commission=1000; R=1; RCNF=2; RCNL=1; R=1; RD=3",
             "deptno=10; empid=110; commission=250; R=3; RCNF=3; RCNL=2; R=2; RD=2",

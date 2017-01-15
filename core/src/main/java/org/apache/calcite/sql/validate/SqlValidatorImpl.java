@@ -1998,7 +1998,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
             usingScope,
             alias,
             new AliasNamespace(this, call, enclosingNode),
-            false);
+            forceNullable);
       }
       return node;
     case MATCH_RECOGNIZE:

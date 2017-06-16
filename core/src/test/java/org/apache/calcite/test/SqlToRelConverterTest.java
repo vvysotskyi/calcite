@@ -1131,6 +1131,7 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   @Test public void testInValueListShort() {
     final String sql = "select empno from emp where deptno in (10, 20)";
     sql(sql).ok();
+    sql(sql).expand(false).ok();
   }
 
   @Test public void testInValueListLong() {
@@ -1164,6 +1165,22 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
     final String sql = "select empno from emp where deptno not in"
         + " (select deptno from dept)";
     sql(sql).ok();
+  }
+
+  @Test public void testAllValueList() {
+    final String sql = "select empno from emp where deptno > all (10, 20)";
+    sql(sql).expand(false).ok();
+  }
+
+  @Test public void testSomeValueList() {
+    final String sql = "select empno from emp where deptno > some (10, 20)";
+    sql(sql).expand(false).ok();
+  }
+
+  @Test public void testSome() {
+    final String sql = "select empno from emp where deptno > some (\n"
+        + "  select deptno from dept)";
+    sql(sql).expand(false).ok();
   }
 
   @Test public void testNotInUncorrelatedSubQueryRex() {

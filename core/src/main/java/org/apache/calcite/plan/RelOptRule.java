@@ -521,13 +521,18 @@ public abstract class RelOptRule {
   public static RelNode convert(RelNode rel, RelTraitSet toTraits) {
     RelOptPlanner planner = rel.getCluster().getPlanner();
 
-    if (rel.getTraitSet().size() < toTraits.size()) {
-      new RelTraitPropagationVisitor(planner, toTraits).go(rel);
+    //Changes by Roman Kulyk
+    //Added changes from 3bcce80 which was refactored
+    // by a3bc0d8ea (according to Drill_Get_Off_Calcite_Fork spreadsheet)
+    RelTraitSet toSimpleTraits = toTraits.simplify();
+
+    if (rel.getTraitSet().size() < toSimpleTraits.size()) {
+      new RelTraitPropagationVisitor(planner, toSimpleTraits).go(rel);
     }
 
     RelTraitSet outTraits = rel.getTraitSet();
-    for (int i = 0; i < toTraits.size(); i++) {
-      RelTrait toTrait = toTraits.getTrait(i);
+    for (int i = 0; i < toSimpleTraits.size(); i++) {
+      RelTrait toTrait = toSimpleTraits.getTrait(i);
       if (toTrait != null) {
         outTraits = outTraits.replace(i, toTrait);
       }

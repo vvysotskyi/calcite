@@ -319,13 +319,18 @@ public class PlannerImpl implements Planner {
 
   public RelNode transform(int ruleSetIndex, RelTraitSet requiredOutputTraits,
       RelNode rel) throws RelConversionException {
+
+    //Changes by Roman Kulyk
+    //Added changes from 3bcce80 which was refactored
+    // by a3bc0d8ea (according to Drill_Get_Off_Calcite_Fork spreadsheet)
+    RelTraitSet designedTraitSet = requiredOutputTraits.simplify();
     ensure(State.STATE_5_CONVERTED);
     rel.getCluster().setMetadataProvider(
         new CachingRelMetadataProvider(
             rel.getCluster().getMetadataProvider(),
             rel.getCluster().getPlanner()));
     Program program = programs.get(ruleSetIndex);
-    return program.run(planner, rel, requiredOutputTraits,
+    return program.run(planner, rel, designedTraitSet,
         ImmutableList.<RelOptMaterialization>of(),
         ImmutableList.<RelOptLattice>of());
   }

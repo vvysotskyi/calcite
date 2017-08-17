@@ -16,6 +16,8 @@
  */
 package org.apache.calcite.plan.volcano;
 
+import org.apache.calcite.plan.Convention;
+import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptListener;
 import org.apache.calcite.plan.RelOptUtil;
@@ -233,13 +235,45 @@ class RelSet {
       final VolcanoPlanner planner =
           (VolcanoPlanner) cluster.getPlanner();
 
-      addAbstractConverters(planner, cluster, subset, true);
+      //Changes by Roman Kulyk
+      //Add changes from 2e076e1 which was refactored by
+      // a3bc0d8e (according to Drill_Get_Off_Calcite_Fork spreadsheet)
+      //addAbstractConverters(planner, cluster, subset, true);
+
+      // Add converters to convert the new subset to each existing subset.
+      for (RelSubset subset1 : subsets) {
+        if (subset1.getConvention() == Convention.NONE) {
+          continue;
+        }
+        final AbstractConverter converter =
+            new AbstractConverter(
+                cluster, subset, ConventionTraitDef.INSTANCE,
+                subset1.getTraitSet());
+        planner.register(converter, subset1);
+      }
 
       // Need to first add to subset before adding the abstract converters (for others->subset)
       // since otherwise during register() the planner will try to add this subset again.
       subsets.add(subset);
 
-      addAbstractConverters(planner, cluster, subset, false);
+      //Changes by Roman Kulyk
+      //Add changes from 2e076e1 which was refactored by
+      // a3bc0d8e (according to Drill_Get_Off_Calcite_Fork spreadsheet)
+      //addAbstractConverters(planner, cluster, subset, false);
+
+      for (RelSubset subset1 : subsets) {
+        if (subset1 == subset) {
+          continue;
+        }
+        if (subset1.getConvention() == Convention.NONE) {
+          continue;
+        }
+        final AbstractConverter converter =
+            new AbstractConverter(
+                cluster, subset1, ConventionTraitDef.INSTANCE,
+                traits);
+        planner.register(converter, subset);
+      }
 
       if (planner.listener != null) {
         postEquivalenceEvent(planner, subset);

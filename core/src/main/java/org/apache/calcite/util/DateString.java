@@ -28,15 +28,13 @@ import java.util.regex.Pattern;
  *
  * <p>Immutable, internally represented as a string (in ISO format).
  */
-public class DateString implements Comparable<DateString> {
+public class DateString extends AbstractDateTime {
   private static final Pattern PATTERN =
       Pattern.compile("[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]");
 
-  final String v;
-
   /** Creates a DateString. */
   public DateString(String v) {
-    this.v = v;
+    super(v);
     Preconditions.checkArgument(PATTERN.matcher(v).matches(), v);
   }
 
@@ -58,10 +56,6 @@ public class DateString implements Comparable<DateString> {
 
   @Override public int hashCode() {
     return v.hashCode();
-  }
-
-  @Override public int compareTo(DateString o) {
-    return v.compareTo(o.v);
   }
 
   /** Creates a DateString from a Calendar. */

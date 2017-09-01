@@ -30,15 +30,13 @@ import java.util.regex.Pattern;
  * <p>Immutable, internally represented as a string (in ISO format),
  * and can support unlimited precision (milliseconds, nanoseconds).
  */
-public class TimeString implements Comparable<TimeString> {
+public class TimeString extends AbstractDateTime {
   private static final Pattern PATTERN =
       Pattern.compile("[0-9][0-9]:[0-9][0-9]:[0-9][0-9](\\.[0-9]*[1-9])?");
 
-  final String v;
-
   /** Creates a TimeString. */
   public TimeString(String v) {
-    this.v = v;
+    super(v);
     Preconditions.checkArgument(PATTERN.matcher(v).matches(), v);
   }
 
@@ -104,10 +102,6 @@ public class TimeString implements Comparable<TimeString> {
 
   @Override public int hashCode() {
     return v.hashCode();
-  }
-
-  @Override public int compareTo(TimeString o) {
-    return v.compareTo(o.v);
   }
 
   /** Creates a TimeString from a Calendar. */

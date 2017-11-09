@@ -43,6 +43,7 @@ public class TraitMatchingRule extends RelOptRule {
    * @param converterRule rule to be restricted; rule must take a single
    *                      operand expecting a single input
    */
+  @Deprecated // to be removed before 2.0
   public TraitMatchingRule(ConverterRule converterRule) {
     this(converterRule, RelFactories.LOGICAL_BUILDER);
   }

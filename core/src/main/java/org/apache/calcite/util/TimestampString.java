@@ -107,6 +107,7 @@ public class TimestampString extends AbstractDateTime {
     return v.hashCode();
   }
 
+  /** Appends hour:minute:second to a buffer; assumes they are valid. */
   static StringBuilder hms(StringBuilder b, int h, int m, int s) {
     int2(b, h);
     b.append(':');
@@ -116,6 +117,8 @@ public class TimestampString extends AbstractDateTime {
     return b;
   }
 
+  /** Appends year-month-day and hour:minute:second to a buffer; assumes they
+   * are valid. */
   static StringBuilder ymdhms(StringBuilder b, int year, int month, int day,
       int h, int m, int s) {
     ymd(b, year, month, day);
@@ -124,6 +127,7 @@ public class TimestampString extends AbstractDateTime {
     return b;
   }
 
+  /** Appends year-month-day to a buffer; assumes they are valid. */
   static StringBuilder ymd(StringBuilder b, int year, int month, int day) {
     int4(b, year);
     b.append('-');

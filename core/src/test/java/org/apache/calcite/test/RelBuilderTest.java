@@ -1695,7 +1695,7 @@ public class RelBuilderTest {
    * <a href="https://issues.apache.org/jira/browse/CALCITE-1595">[CALCITE-1595]
    * RelBuilder.call throws NullPointerException if argument types are
    * invalid</a>. */
-  @Test public void testTypeInferenceValidation() throws Exception {
+  @Test public void testTypeInferenceValidation() {
     final RelBuilder builder = RelBuilder.create(config().build());
     // test for a) call(operator, Iterable<RexNode>)
     final RexNode arg0 = builder.literal(0);
@@ -1714,6 +1714,23 @@ public class RelBuilderTest {
     } catch (IllegalArgumentException e) {
       assertThat(e.getMessage(), containsString("cannot derive type"));
     }
+  }
+
+  @Test public void testFilterCastAny() {
+    final RelBuilder builder = RelBuilder.create(config().build());
+    final RelDataType anyType =
+        builder.getTypeFactory().createSqlType(SqlTypeName.ANY);
+    final RelNode root =
+        builder.scan("EMP")
+            .filter(
+                builder.cast(
+                    builder.getRexBuilder().makeInputRef(anyType, 0),
+                    SqlTypeName.BOOLEAN))
+            .build();
+    final String expected = ""
+        + "LogicalFilter(condition=[CAST($0):BOOLEAN NOT NULL])\n"
+        + "  LogicalTableScan(table=[[scott, EMP]])\n";
+    assertThat(str(root), is(expected));
   }
 }
 

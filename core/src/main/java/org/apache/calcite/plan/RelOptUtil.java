@@ -577,19 +577,26 @@ public abstract class RelOptUtil {
 
     ret = createProject(ret, exprs, null);
 
-    final AggregateCall aggCall =
-        AggregateCall.create(SqlStdOperatorTable.MIN,
-            false,
-            false,
-            ImmutableList.of(projectedKeyCount),
-            -1,
-            projectedKeyCount,
-            ret,
-            null,
-            null);
+    switch (subQueryType) {
+    case EXISTS:
+      ret = LogicalAggregate.create(ret, ImmutableBitSet.range(ret.getRowType().getFieldCount()),
+          null, ImmutableList.<AggregateCall>of());
+      break;
+    default:
+      final AggregateCall aggCall =
+          AggregateCall.create(SqlStdOperatorTable.MIN,
+              false,
+              false,
+              ImmutableList.of(projectedKeyCount),
+              -1,
+              projectedKeyCount,
+              ret,
+              null,
+              null);
 
-    ret = LogicalAggregate.create(ret, ImmutableBitSet.range(projectedKeyCount),
-        null, ImmutableList.of(aggCall));
+      ret = LogicalAggregate.create(ret, ImmutableBitSet.range(projectedKeyCount),
+          null, ImmutableList.of(aggCall));
+    }
 
     switch (logic) {
     case TRUE_FALSE_UNKNOWN:

@@ -129,10 +129,9 @@ public class MutableRelTest {
   }
 
   @Test public void testConvertSemiJoin() {
-    final String sql = "select * from dept where exists (\n"
-        + "  select * from emp\n"
-        + "  where emp.deptno = dept.deptno\n"
-        + "  and emp.sal > 100)";
+    final String sql = "select dept.* from dept join (\n"
+        + "  select distinct deptno from emp\n"
+        + "  where sal > 100) using (deptno)";
     checkConvertMutableRel(
         "SemiJoin",
         sql,

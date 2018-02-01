@@ -4886,7 +4886,7 @@ LogicalProject(DEPTNO=[$0], NAME=[$1])
   LogicalJoin(condition=[=($0, $2)], joinType=[inner])
     LogicalTableScan(table=[[CATALOG, SALES, DEPT]])
     LogicalAggregate(group=[{0}])
-      LogicalProject(DEPTNO9=[$7], $f0=[true])
+      LogicalProject(DEPTNO9=[$7])
         LogicalFilter(condition=[>($5, 100)])
           LogicalTableScan(table=[[CATALOG, SALES, EMP]])
 ]]>
@@ -4895,7 +4895,7 @@ LogicalProject(DEPTNO=[$0], NAME=[$1])
             <![CDATA[
 SemiJoin(condition=[=($0, $2)], joinType=[inner])
   LogicalTableScan(table=[[CATALOG, SALES, DEPT]])
-  LogicalProject(DEPTNO9=[$7], $f0=[true])
+  LogicalProject(DEPTNO9=[$7])
     LogicalFilter(condition=[>($5, 100)])
       LogicalTableScan(table=[[CATALOG, SALES, EMP]])
 ]]>
@@ -4908,31 +4908,19 @@ SemiJoin(condition=[=($0, $2)], joinType=[inner])
   where emp.deptno = dept.deptno
   and emp.sal > 100)) s join customer.account on s.deptno = account.acctno]]>
         </Resource>
-        <Resource name="planBefore">
-            <![CDATA[
-LogicalProject(DEPTNO=[$0])
-  LogicalJoin(condition=[=($0, $2)], joinType=[inner])
-    SemiJoin(condition=[=($0, $2)], joinType=[inner])
-      LogicalTableScan(table=[[CATALOG, SALES, DEPT]])
-      LogicalProject(DEPTNO9=[$7], $f0=[true])
-        LogicalFilter(condition=[>($5, 100)])
-          LogicalTableScan(table=[[CATALOG, SALES, EMP]])
-    LogicalTableScan(table=[[CATALOG, CUSTOMER, ACCOUNT]])
-]]>
-        </Resource>
         <Resource name="planAfter">
             <![CDATA[
 LogicalProject(DEPTNO=[$0])
   LogicalJoin(condition=[=($0, $1)], joinType=[inner])
-    SemiJoin(condition=[=($0, $1)], joinType=[inner])
-      LogicalProject(DEPTNO=[$0])
-        LogicalTableScan(table=[[CATALOG, SALES, DEPT]])
-      LogicalProject(DEPTNO9=[$1])
-        LogicalFilter(condition=[>($0, 100)])
-          LogicalProject(SAL=[$5], DEPTNO=[$7])
-            LogicalTableScan(table=[[CATALOG, SALES, EMP]])
-    LogicalProject(ACCTNO=[$0])
-      LogicalTableScan(table=[[CATALOG, CUSTOMER, ACCOUNT]])
+    SemiJoin(condition=[=($0, $2)], joinType=[inner])
+      LogicalProject(DEPTNO=[$0], LOC=[$2])
+        LogicalTableScan(table=[[scott, DEPT]])
+      LogicalProject(DEPTNO9=[$2])
+        LogicalFilter(condition=[>($1, 100)])
+          LogicalProject(EMPNO=[$0], SAL=[$5], DEPTNO=[$7])
+            LogicalTableScan(table=[[scott, EMP]])
+    LogicalProject(DEPTNO=[$0])
+      LogicalTableScan(table=[[scott, DEPT]])
 ]]>
         </Resource>
     </TestCase>

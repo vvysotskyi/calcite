@@ -2724,6 +2724,17 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
     sql(sql).ok();
   }
 
+  @Test public void testExistsExpand() {
+    final String sql = "SELECT cs1.sal\n"
+        + "FROM     emp cs1 \n"
+        + "WHERE    EXISTS\n"
+        + "(SELECT *\n"
+        + "FROM   emp cs2\n"
+        + "WHERE  cs1.sal = cs2.sal\n"
+        + "AND    cs1.deptno <> cs2.deptno)";
+    sql(sql).expand(true).ok();
+  }
+
   /**
    * Visitor that checks that every {@link RelNode} in a tree is valid.
    *

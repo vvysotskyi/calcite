@@ -96,7 +96,8 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.runtime.Hook;
-import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
@@ -688,9 +689,41 @@ public class RelOptRulesTest extends RelOptTestBase {
         .checkUnchanged();
   }
 
-  @Test public void testSemiJoinTrim() throws Exception {
+  @Test public void testSemiJoinTrim() {
+    RelBuilder relBuilder = RelBuilder.create(RelBuilderTest.config().build());
+    RelNode relNode = relBuilder
+        .scan("DEPT")
+        .scan("EMP")
+        .filter(
+            relBuilder.call(
+                SqlStdOperatorTable.GREATER_THAN,
+                relBuilder.field(5),
+                relBuilder.literal(100)))
+        .project(
+            relBuilder.alias(
+                relBuilder.field(7),
+                "DEPTNO9"),
+            relBuilder.alias(
+                relBuilder.literal(true),
+                "$f0"))
+        .semiJoin(
+            relBuilder.call(
+                SqlStdOperatorTable.EQUALS,
+                relBuilder.field(2, 0, 0),
+                relBuilder.field(2, 1, 0)))
+        .scan("DEPT")
+        .join(
+            JoinRelType.INNER,
+            relBuilder.call(
+                SqlStdOperatorTable.EQUALS,
+                relBuilder.field(0),
+                relBuilder.field(2)))
+        .project(
+            relBuilder.alias(
+                relBuilder.field(0),
+                "DEPTNO"))
+        .build();
     final DiffRepository diffRepos = getDiffRepos();
-    String sql = diffRepos.expand(null, "${sql}");
 
     TesterImpl t = (TesterImpl) tester;
     final RelDataTypeFactory typeFactory = t.getTypeFactory();
@@ -699,18 +732,9 @@ public class RelOptRulesTest extends RelOptTestBase {
     final SqlValidator validator =
         t.createValidator(
             catalogReader, typeFactory);
-    SqlToRelConverter converter =
-        t.createSqlToRelConverter(
-            validator,
-            catalogReader,
-            typeFactory,
-            SqlToRelConverter.Config.DEFAULT);
 
-    final SqlNode sqlQuery = t.parseQuery(sql);
-    final SqlNode validatedQuery = validator.validate(sqlQuery);
     RelRoot root =
-        converter.convertQuery(validatedQuery, false, true);
-    root = root.withRel(converter.decorrelate(sqlQuery, root.rel));
+        RelRoot.of(relNode, SqlKind.SELECT);
 
     final HepProgram program =
         HepProgram.builder()
@@ -721,12 +745,10 @@ public class RelOptRulesTest extends RelOptTestBase {
             .build();
 
     HepPlanner planner = new HepPlanner(program);
-    planner.setRoot(root.rel);
+    planner.setRoot(relNode);
     root = root.withRel(planner.findBestExp());
 
-    String planBefore = NL + RelOptUtil.toString(root.rel);
-    diffRepos.assertEquals("planBefore", "${planBefore}", planBefore);
-    converter = t.createSqlToRelConverter(validator, catalogReader, typeFactory,
+    SqlToRelConverter converter = t.createSqlToRelConverter(validator, catalogReader, typeFactory,
         SqlToRelConverter.configBuilder().withTrimUnusedFields(true).build());
     root = root.withRel(converter.trimUnusedFields(false, root.rel));
     String planAfter = NL + RelOptUtil.toString(root.rel);

@@ -328,9 +328,9 @@ public abstract class SubQueryRemoveRule extends RelOptRule {
 
     if (allLiterals) {
       final List<RexNode> conditions =
-        Pair.zip(expressionOperands, fields).stream()
-            .map(pair -> builder.equals(pair.left, pair.right))
-            .collect(Collectors.toList());
+          Pair.zip(expressionOperands, fields).stream()
+              .map(pair -> builder.equals(pair.left, pair.right))
+              .collect(Collectors.toList());
       switch (logic) {
       case TRUE:
       case TRUE_FALSE:

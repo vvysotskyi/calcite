@@ -1322,6 +1322,11 @@ public class VolcanoPlanner extends AbstractRelOptPlanner {
         subset.getCluster(), subset.getTraitSet());
   }
 
+  boolean shouldSkipRel(RelNode rel) {
+    Double importance = relImportances.get(rel);
+    return importance != null && importance == 0.0d;
+  }
+
   /**
    * Fires all rules matched by a relational expression.
    *
@@ -1333,6 +1338,18 @@ public class VolcanoPlanner extends AbstractRelOptPlanner {
   void fireRules(
       RelNode rel,
       boolean deferred) {
+    if (shouldSkipRel(rel)) {
+      return;
+    }
+    // If relation is self-referencing, just ignore it
+    RelSubset relSubset = getSubset(rel);
+    for (RelNode input : rel.getInputs()) {
+      RelSubset inputSubset = getSubset(input);
+      if (relSubset.equals(inputSubset)) {
+        return;
+      }
+    }
+
     for (RelOptRuleOperand operand : classOperands.get(rel.getClass())) {
       if (operand.matches(rel)) {
         final VolcanoRuleCall ruleCall;

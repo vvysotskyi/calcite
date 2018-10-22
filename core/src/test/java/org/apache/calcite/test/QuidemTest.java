@@ -200,9 +200,6 @@ public abstract class QuidemTest {
         if (cause instanceof Exception) {
           throw (Exception) cause;
         }
-        if (cause instanceof Error) {
-          throw (Error) cause;
-        }
         throw e;
       }
     } else {

@@ -21,7 +21,6 @@ import org.apache.calcite.adapter.clone.ArrayTableTest;
 import org.apache.calcite.jdbc.CalciteRemoteDriverTest;
 import org.apache.calcite.plan.RelOptPlanReaderTest;
 import org.apache.calcite.plan.RelOptUtilTest;
-import org.apache.calcite.plan.RelTraitTest;
 import org.apache.calcite.plan.RelWriterTest;
 import org.apache.calcite.plan.volcano.CollationConversionTest;
 import org.apache.calcite.plan.volcano.ComboRuleTest;
@@ -106,7 +105,6 @@ import org.junit.runners.Suite;
     InterpreterTest.class,
     TestUtilTest.class,
     VolcanoPlannerTest.class,
-    RelTraitTest.class,
     HepPlannerTest.class,
     TraitPropagationTest.class,
     RelDistributionTest.class,

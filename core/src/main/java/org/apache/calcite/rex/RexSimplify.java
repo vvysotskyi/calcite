@@ -1033,6 +1033,11 @@ public class RexSimplify {
             && call.operands.get(1) instanceof RexLiteral) {
           final RexLiteral literal = (RexLiteral) call.operands.get(1);
           final C c1 = literal.getValueAs(clazz);
+          if (checkRangeValueTypes(r0, c1)) {
+            // for the case when vale cannot be compared with the borders,
+            // don't do the simplification
+            return r0;
+          }
           final Range<C> r1 = range(predicate.getKind(), c1);
           if (r0.encloses(r1)) {
             // Given these predicates, term is always satisfied.
@@ -1282,10 +1287,15 @@ public class RexSimplify {
           Pair.of(range(comparison, v0),
               (List<RexNode>) ImmutableList.of(term)));
     } else {
+      Range<C> r = p.left;
+      // for the case when vale cannot be compared with the borders,
+      // don't do the simplification
+      if (checkRangeValueTypes(r, v0)) {
+        return null;
+      }
       // Exists
       boolean removeUpperBound = false;
       boolean removeLowerBound = false;
-      Range<C> r = p.left;
       switch (comparison) {
       case EQUALS:
         if (!r.contains(v0)) {
@@ -1481,6 +1491,12 @@ public class RexSimplify {
     }
     // Default
     return null;
+  }
+
+  /** Checks whether specified value may be compared with the borders of this range. */
+  private static <C extends Comparable<C>> boolean checkRangeValueTypes(Range<C> range, C value) {
+    C borderValue = range.hasLowerBound() ? range.lowerEndpoint() : range.upperEndpoint();
+    return !value.getClass().isAssignableFrom(borderValue.getClass());
   }
 
   private static <C extends Comparable<C>> Range<C> range(SqlKind comparison,

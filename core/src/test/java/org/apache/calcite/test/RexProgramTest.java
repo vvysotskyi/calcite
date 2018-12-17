@@ -2433,6 +2433,33 @@ public class RexProgramTest extends RexProgramBuilderBase {
         "false");
   }
 
+  @Test public void testSeveralTypesComparison() {
+    // "x > 10 AND x = '2'"
+    checkSimplifyUnchanged(
+        and(gt(vInt(1), literal(10)), eq(vInt(1), literal("2"))));
+
+    // "x > 10 AND x = '2' AND x > 20"
+    checkSimplify2(
+        and(gt(vInt(1), literal(10)),
+            eq(vInt(1), literal("2")),
+            gt(vInt(1), literal(20))),
+        "AND(>(?0.int1, 10), =(?0.int1, '2'), >(?0.int1, 20))",
+        "AND(=(?0.int1, '2'), >(?0.int1, 20))");
+
+    // "(x > 10) OR (x = '2') OR (x > 20)"
+    checkSimplifyUnchanged(
+        or(gt(vInt(1), literal(10)),
+            eq(vInt(1), literal("2")),
+            gt(vInt(1), literal(20))));
+
+    // "(x > 10) OR (x = '2') OR NOT (x > 20)"
+    checkSimplify(
+        or(gt(vInt(1), literal(10)),
+            eq(vInt(1), literal("2")),
+            not(gt(vInt(1), literal(20)))),
+        "OR(>(?0.int1, 10), =(?0.int1, '2'), <=(?0.int1, 20))");
+  }
+
   private RexNode simplify(RexNode e) {
     final RexSimplify simplify =
         new RexSimplify(rexBuilder, RelOptPredicateList.EMPTY, RexUtil.EXECUTOR)

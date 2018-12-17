@@ -1403,6 +1403,11 @@ public class RexSimplify {
             && call.operands.get(1) instanceof RexLiteral) {
           final RexLiteral literal = (RexLiteral) call.operands.get(1);
           final C c1 = literal.getValueAs(clazz);
+          if (checkRangeValueTypes(r0, c1)) {
+            // for the case when value cannot be compared with the borders,
+            // don't produce the simplification and return initial range
+            return r0;
+          }
           final Range<C> r1 = range(predicate.getKind(), c1);
           if (r0.encloses(r1)) {
             // Given these predicates, term is always satisfied.
@@ -1684,12 +1689,17 @@ public class RexSimplify {
     if (p == null) {
       rangeTerms.put(ref,
           Pair.of(range(comparison, v0),
-              (List<RexNode>) ImmutableList.of(term)));
+              ImmutableList.of(term)));
     } else {
+      Range<C> r = p.left;
+      // for the case when value cannot be compared with the borders,
+      // don't produce the simplification
+      if (checkRangeValueTypes(r, v0)) {
+        return null;
+      }
       // Exists
       boolean removeUpperBound = false;
       boolean removeLowerBound = false;
-      Range<C> r = p.left;
       final RexLiteral trueLiteral = rexBuilder.makeLiteral(true);
       switch (comparison) {
       case EQUALS:
@@ -1699,7 +1709,7 @@ public class RexSimplify {
         }
         rangeTerms.put(ref,
             Pair.of(Range.singleton(v0),
-                (List<RexNode>) ImmutableList.of(term)));
+                ImmutableList.of(term)));
         // remove
         for (RexNode e : p.right) {
           replaceLast(terms, e, trueLiteral);
@@ -1857,7 +1867,7 @@ public class RexSimplify {
         }
         newBounds.add(term);
         rangeTerms.put(ref,
-            Pair.of(r, (List<RexNode>) newBounds.build()));
+            Pair.of(r, newBounds.build()));
       } else if (removeLowerBound) {
         ImmutableList.Builder<RexNode> newBounds = ImmutableList.builder();
         for (RexNode e : p.right) {
@@ -1869,7 +1879,7 @@ public class RexSimplify {
         }
         newBounds.add(term);
         rangeTerms.put(ref,
-            Pair.of(r, (List<RexNode>) newBounds.build()));
+            Pair.of(r, newBounds.build()));
       }
     }
     // Default
@@ -1892,6 +1902,12 @@ public class RexSimplify {
     default:
       throw new AssertionError();
     }
+  }
+
+  /** Checks whether specified value can be compared with the borders of this range. */
+  private static <C extends Comparable<C>> boolean checkRangeValueTypes(Range<C> range, C value) {
+    C borderValue = range.hasLowerBound() ? range.lowerEndpoint() : range.upperEndpoint();
+    return !value.getClass().isAssignableFrom(borderValue.getClass());
   }
 
   /** Marker interface for predicates (expressions that evaluate to BOOLEAN). */

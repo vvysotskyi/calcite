@@ -337,18 +337,6 @@ public class PlannerImpl implements Planner, ViewExpander {
 
   // CalciteCatalogReader is stateless; no need to store one
   private CalciteCatalogReader createCatalogReader(SchemaPlus rootSchema) {
-    final Context context = frameworkConfig.getContext();
-    final CalciteConnectionConfig connectionConfig;
-
-    if (context != null) {
-      connectionConfig = context.unwrap(CalciteConnectionConfig.class);
-    } else {
-      Properties properties = new Properties();
-      properties.setProperty(CalciteConnectionProperty.CASE_SENSITIVE.camelName(),
-              String.valueOf(parserConfig.caseSensitive()));
-      connectionConfig = new CalciteConnectionConfigImpl(properties);
-    }
-
     return new CalciteCatalogReader(
         CalciteSchema.from(rootSchema),
         CalciteSchema.from(defaultSchema).path(null),

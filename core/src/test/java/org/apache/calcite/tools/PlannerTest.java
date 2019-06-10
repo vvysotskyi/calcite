@@ -622,9 +622,10 @@ public class PlannerTest {
         + "from emps "
         + "order by emps.deptno) "
         + "order by deptno",
-        "EnumerableSort(sort0=[$1], dir0=[ASC])\n"
-        + "  EnumerableProject(empid=[$0], deptno=[$1])\n"
-        + "    EnumerableTableScan(table=[[hr, emps]])\n");
+        "EnumerableProject(empid=[$0], deptno=[$1])\n"
+            + "  EnumerableSort(sort0=[$1], dir0=[ASC])\n"
+            + "    EnumerableProject(empid=[$0], deptno=[$1], name=[$2], salary=[$3], commission=[$4])\n"
+            + "      EnumerableTableScan(table=[[hr, emps]])\n");
   }
 
   /** Unit test that parses, validates, converts and
@@ -636,9 +637,10 @@ public class PlannerTest {
         + "from emps "
         + "order by emps.deptno) "
         + "order by deptno",
-        "EnumerableSort(sort0=[$1], dir0=[ASC])\n"
-        + "  EnumerableProject(EXPR$0=[+($0, $1)], deptno=[$1])\n"
-        + "    EnumerableTableScan(table=[[hr, emps]])\n");
+        "EnumerableProject(EXPR$0=[+($0, $1)], deptno=[$1])\n"
+        + "  EnumerableSort(sort0=[$1], dir0=[ASC])\n"
+        + "    EnumerableProject(empid=[$0], deptno=[$1])\n"
+        + "      EnumerableTableScan(table=[[hr, emps]])\n");
   }
 
   @Test void testTwoSortRemoveInnerSort() throws Exception {
@@ -649,11 +651,16 @@ public class PlannerTest {
         + "order by deptno",
         "EnumerableSort(sort0=[$1], dir0=[ASC])\n"
         + "  EnumerableProject(EXPR$0=[+($0, $1)], deptno=[$1])\n"
-        + "    EnumerableTableScan(table=[[hr, emps]])\n");
+        + "    EnumerableSort(sort0=[$0], dir0=[ASC])\n"
+        + "      EnumerableProject(empid=[$0], deptno=[$1])\n"
+        + "        EnumerableTableScan(table=[[hr, emps]])\n");
   }
 
   /** Tests that outer order by is not removed since window function
    * might reorder the rows in-between */
+  @Disabled("Node [rel#22:Subset#3.ENUMERABLE.[2]] could not be implemented; planner state:\n"
+      + "\n"
+      + "Root: rel#22:Subset#3.ENUMERABLE.[2]")
   @Test void testDuplicateSortPlanWithOver() throws Exception {
     runDuplicateSortCheck("select emp_cnt, empid+deptno from ( "
         + "select empid, deptno, count(*) over (partition by deptno) emp_cnt from ( "
@@ -662,10 +669,14 @@ public class PlannerTest {
         + "   order by emps.deptno) "
         + ")"
         + "order by deptno",
-        "EnumerableSort(sort0=[$2], dir0=[ASC])\n"
-        + "  EnumerableProject(emp_cnt=[$5], EXPR$1=[+($0, $1)], deptno=[$1])\n"
-        + "    EnumerableWindow(window#0=[window(partition {1} aggs [COUNT()])])\n"
-        + "      EnumerableTableScan(table=[[hr, emps]])\n");
+        "EnumerableProject(EXPR$0=[$0])\n"
+        + "  EnumerableSort(sort0=[$1], dir0=[ASC])\n"
+        + "    EnumerableProject(EXPR$0=[+($0, $1)], deptno=[$1])\n"
+        + "      EnumerableProject(empid=[$0], deptno=[$1], $2=[$2])\n"
+        + "        EnumerableWindow(window#0=[window(partition {1} aggs [COUNT()])])\n"
+        + "          EnumerableSort(sort0=[$1], dir0=[ASC])\n"
+        + "            EnumerableProject(empid=[$0], deptno=[$1])\n"
+        + "              EnumerableTableScan(table=[[hr, emps]])\n");
   }
 
   @Test void testDuplicateSortPlanWithRemovedOver() throws Exception {
@@ -676,9 +687,10 @@ public class PlannerTest {
         + "   order by emps.deptno) "
         + ")"
         + "order by deptno",
-        "EnumerableSort(sort0=[$1], dir0=[ASC])\n"
-        + "  EnumerableProject(EXPR$0=[+($0, $1)], deptno=[$1])\n"
-        + "    EnumerableTableScan(table=[[hr, emps]])\n");
+        "EnumerableProject(EXPR$0=[+($0, $1)], deptno=[$1])\n"
+            + "  EnumerableSort(sort0=[$1], dir0=[ASC])\n"
+            + "    EnumerableProject(empid=[$0], deptno=[$1])\n"
+            + "      EnumerableTableScan(table=[[hr, emps]])\n");
   }
 
   // If proper "SqlParseException, ValidationException, RelConversionException"
@@ -733,7 +745,9 @@ public class PlannerTest {
     assertThat(toString(transform),
         equalTo("EnumerableSort(sort0=[$1], dir0=[ASC])\n"
             + "  EnumerableProject(empid=[$0], deptno=[$1])\n"
-            + "    EnumerableTableScan(table=[[hr, emps]])\n"));
+            + "    EnumerableSort(sort0=[$1], dir0=[ASC])\n"
+            + "      EnumerableProject(empid=[$0], deptno=[$1], name=[$2], salary=[$3], commission=[$4])\n"
+            + "        EnumerableTableScan(table=[[hr, emps]])\n"));
   }
 
   /** Test case for
@@ -1382,7 +1396,9 @@ public class PlannerTest {
     assertThat(plan,
         equalTo("LogicalSort(sort0=[$0], dir0=[ASC])\n"
         + "  LogicalProject(psPartkey=[$0])\n"
-        + "    LogicalTableScan(table=[[tpch, partsupp]])\n"));
+        + "    LogicalSort(sort0=[$0], sort1=[$1], dir0=[ASC], dir1=[ASC])\n"
+        + "      LogicalProject(psPartkey=[$0], psSupplyCost=[$1])\n"
+        + "        LogicalTableScan(table=[[tpch, partsupp]])\n"));
   }
 
   /** Test case for

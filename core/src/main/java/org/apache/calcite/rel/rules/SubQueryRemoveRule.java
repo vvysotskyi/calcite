@@ -329,6 +329,7 @@ public abstract class SubQueryRemoveRule extends RelOptRule {
    */
   private RexNode rewriteIn(RexSubQuery e, Set<CorrelationId> variablesSet,
       RelOptUtil.Logic logic, RelBuilder builder, int offset) {
+//    logic = RelOptUtil.Logic.TRUE_FALSE_UNKNOWN;
     // Most general case, where the left and right keys might have nulls, and
     // caller requires 3-valued logic return.
     //

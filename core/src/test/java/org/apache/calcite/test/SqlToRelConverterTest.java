@@ -918,7 +918,7 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
     final String sql = "with t (a, b) as (select * from (values (1, 2)))\n"
         + "select * from t where exists (\n"
         + "  select 1 from emp where deptno = t.a)";
-    sql(sql).ok();
+    sql(sql).decorrelate(false).ok();
   }
 
   @Test public void testTableSubset() {
@@ -3446,7 +3446,7 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
         + " left join lateral\n"
         + " (select c,a*c from (values 2) as s(a)) as r(d,c)\n"
         + " using(c)";
-    sql(sql).ok();
+    sql(sql).decorrelate(false).ok();
   }
 
   /**
@@ -3456,7 +3456,7 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
     final String sql = "select * from (values 4) as t(c)\n"
         + " natural left join lateral\n"
         + " (select c,a*c from (values 2) as s(a)) as r(d,c)";
-    sql(sql).ok();
+    sql(sql).decorrelate(false).ok();
   }
 
   /**
@@ -3467,7 +3467,7 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
         + " left join lateral\n"
         + " (select c,a*c from (values 2) as s(a)) as r(d,c)\n"
         + " on t.c=r.c";
-    sql(sql).ok();
+    sql(sql).decorrelate(false).ok();
   }
 
   /**
@@ -3478,7 +3478,7 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
         + " left join lateral\n"
         + " (select c,a*c from (values 2) as s(a)) as r(d,c)\n"
         + " on t.c+t.d=r.c";
-    sql(sql).ok();
+    sql(sql).decorrelate(false).ok();
   }
 
   /**
@@ -3493,7 +3493,7 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
         + "  (select c+1 from (values 3)) as bar(b1)\n"
         + "  on f1=b1)\n"
         + "as r(n) on c=n";
-    sql(sql).ok();
+    sql(sql).decorrelate(false).ok();
   }
 
   /**
@@ -3504,7 +3504,7 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
         + " cross join lateral\n"
         + " (select c,a*c as f from (values 2) as s(a)\n"
         + " where c+d=a*c)";
-    sql(sql).ok();
+    sql(sql).decorrelate(false).ok();
   }
 
   /**
@@ -3520,7 +3520,7 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
         + "  (select c+1 from (values 3)) as bar(b1)\n"
         + "  on f1=b1\n"
         + ") as r(n) where c=n)";
-    sql(sql).ok();
+    sql(sql).decorrelate(false).ok();
   }
 
   /**

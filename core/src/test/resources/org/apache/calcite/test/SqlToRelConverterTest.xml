@@ -5681,15 +5681,14 @@ select * from t where exists (
         <Resource name="plan">
             <![CDATA[
 LogicalProject(A=[$0], B=[$1])
-  LogicalProject(EXPR$0=[$0], EXPR$1=[$1], $f0=[$2])
-    LogicalFilter(condition=[IS NOT NULL($2)])
-      LogicalCorrelate(correlation=[$cor0], joinType=[left], requiredColumns=[{0}])
-        LogicalProject(EXPR$0=[$0], EXPR$1=[$1])
-          LogicalValues(tuples=[[{ 1, 2 }]])
-        LogicalAggregate(group=[{}], agg#0=[MIN($0)])
-          LogicalProject($f0=[true])
-            LogicalFilter(condition=[=($7, $cor0.A)])
-              LogicalTableScan(table=[[CATALOG, SALES, EMP]])
+  LogicalFilter(condition=[IS NOT NULL($2)])
+    LogicalCorrelate(correlation=[$cor0], joinType=[left], requiredColumns=[{0}])
+      LogicalProject(EXPR$0=[$0], EXPR$1=[$1])
+        LogicalValues(tuples=[[{ 1, 2 }]])
+      LogicalAggregate(group=[{}], agg#0=[MIN($0)])
+        LogicalProject($f0=[true])
+          LogicalFilter(condition=[=($7, $cor0.A)])
+            LogicalTableScan(table=[[CATALOG, SALES, EMP]])
 ]]>
         </Resource>
     </TestCase>

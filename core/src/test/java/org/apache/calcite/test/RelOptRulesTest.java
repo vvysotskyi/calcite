@@ -5618,6 +5618,34 @@ public class RelOptRulesTest extends RelOptTestBase {
     checkSubQuery(sql).withLateDecorrelation(true).check();
   }
 
+  @Test public void testDecorrelateScalarSubQuery() throws Exception {
+    final String sql = "select \n"
+        + "    (select count(t2.id) \n"
+        + "    from (values(1), (2)) t2(id) where t2.id = t1.id)\n"
+        + "    from (values(1), (2)) t1(id)";
+    checkSubQuery(sql).withLateDecorrelation(true).check();
+  }
+
+  @Test public void testDecorrelateInWithAggregate() throws Exception {
+    final String sql = "with parts (PNum, OrderOnHand)\n" +
+        "     as (select * from (values (3, 6), (10, 1), (8, 0)) as t(PNum, OrderOnHand)),\n" +
+        "  supply (PNum, Qty)\n" +
+        "     as (select * from (values (3, 4), (3, 2), (10, 1)))\n" +
+        "select pnum\n" +
+        "from parts p\n" +
+        "where orderOnHand\n" +
+        "     in (select count(s.Qty) from supply s\n" +
+        "          where s.pnum = p.pnum)";
+    checkSubQuery(sql).withLateDecorrelation(true).check();
+  }
+
+//  @Test public void testDecorrelateExists() throws Exception {
+//    final String sql = "select \n"
+//        + "   exists (select count(t2.id) \n"
+//        + "    from (values(1), (2)) t2(id) where t2.id = t1.id)\n"
+//        + "    from (values(3), (4)) t1(id)";
+//    checkSubQuery(sql).withLateDecorrelation(true).check();
+//  }
   /** Test case for
    * <a href="https://issues.apache.org/jira/browse/CALCITE-1511">[CALCITE-1511]
    * AssertionError while decorrelating query with two EXISTS

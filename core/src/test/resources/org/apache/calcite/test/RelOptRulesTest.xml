@@ -831,6 +831,100 @@ LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$
 ]]>
         </Resource>
     </TestCase>
+    <TestCase name="testDecorrelateScalarSubQuery">
+        <Resource name="sql">
+            <![CDATA[select * from sales.emp
+WHERE job in (
+  select job from emp ee where ee.sal=34)AND EXISTS (
+  select * from emp e where emp.deptno = e.deptno)
+]]>
+        </Resource>
+        <Resource name="planBefore">
+            <![CDATA[
+LogicalProject(EXPR$0=[$SCALAR_QUERY({
+LogicalAggregate(group=[{}], EXPR$0=[COUNT()])
+  LogicalFilter(condition=[=($0, $cor0.ID)])
+    LogicalValues(tuples=[[{ 1 }, { 2 }]])
+})])
+  LogicalValues(tuples=[[{ 1 }, { 2 }]])
+]]>
+        </Resource>
+        <Resource name="planMid">
+            <![CDATA[
+LogicalProject(EXPR$0=[$1])
+  LogicalCorrelate(correlation=[$cor0], joinType=[left], requiredColumns=[{0}])
+    LogicalValues(tuples=[[{ 1 }, { 2 }]])
+    LogicalAggregate(group=[{}], EXPR$0=[COUNT()])
+      LogicalFilter(condition=[=($0, $cor0.ID)])
+        LogicalValues(tuples=[[{ 1 }, { 2 }]])
+]]>
+        </Resource>
+        <Resource name="planAfter">
+            <![CDATA[
+LogicalProject(EXPR$0=[CASE(IS NULL($2), 0:BIGINT, $2)])
+  LogicalJoin(condition=[=($0, $1)], joinType=[left])
+    LogicalValues(tuples=[[{ 1 }, { 2 }]])
+    LogicalAggregate(group=[{0}], EXPR$0=[COUNT()])
+      LogicalProject(ID=[$0])
+        LogicalValues(tuples=[[{ 1 }, { 2 }]])
+]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testDecorrelateInWithAggregate">
+        <Resource name="sql">
+            <![CDATA[select * from sales.emp
+WHERE job in (
+  select job from emp ee where ee.sal=34)AND EXISTS (
+  select * from emp e where emp.deptno = e.deptno)
+]]>
+        </Resource>
+        <Resource name="planBefore">
+            <![CDATA[
+LogicalProject(PNUM=[$0])
+  LogicalFilter(condition=[IN($1, {
+LogicalAggregate(group=[{}], EXPR$0=[COUNT()])
+  LogicalProject(EXPR$1=[$1])
+    LogicalFilter(condition=[=($0, $cor0.PNUM)])
+      LogicalProject(EXPR$0=[$0], EXPR$1=[$1])
+        LogicalValues(tuples=[[{ 3, 4 }, { 3, 2 }, { 10, 1 }]])
+})], variablesSet=[[$cor0]])
+    LogicalProject(PNUM=[$0], ORDERONHAND=[$1])
+      LogicalValues(tuples=[[{ 3, 6 }, { 10, 1 }, { 8, 0 }]])
+]]>
+        </Resource>
+        <Resource name="planMid">
+            <![CDATA[
+LogicalProject(PNUM=[$0])
+  LogicalProject(PNUM=[$0], ORDERONHAND=[$1])
+    LogicalFilter(condition=[IS NOT NULL($3)])
+      LogicalCorrelate(correlation=[$cor0], joinType=[left], requiredColumns=[{0}])
+        LogicalProject(PNUM=[$0], ORDERONHAND=[$1])
+          LogicalValues(tuples=[[{ 3, 6 }, { 10, 1 }, { 8, 0 }]])
+        LogicalFilter(condition=[=($cor0.ORDERONHAND, $0)])
+          LogicalProject(EXPR$0=[$0], i=[true])
+            LogicalAggregate(group=[{}], EXPR$0=[COUNT()])
+              LogicalProject(EXPR$0=[$0])
+                LogicalFilter(condition=[=($0, $cor0.PNUM)])
+                  LogicalProject(EXPR$0=[$0], EXPR$1=[$1])
+                    LogicalValues(tuples=[[{ 3, 4 }, { 3, 2 }, { 10, 1 }]])
+]]>
+        </Resource>
+        <Resource name="planAfter">
+            <![CDATA[
+LogicalProject(PNUM=[$0])
+  LogicalJoin(condition=[AND(=($0, $2), =($1, $3))], joinType=[inner])
+    LogicalProject(PNUM=[$0], ORDERONHAND=[$1])
+      LogicalValues(tuples=[[{ 3, 6 }, { 10, 1 }, { 8, 0 }]])
+    LogicalAggregate(group=[{0}], EXPR$0=[COUNT()])
+      LogicalProject(PNUM=[$2], $f0=[0])
+        LogicalJoin(condition=[=($0, $2)], joinType=[inner])
+          LogicalProject(EXPR$0=[$0], EXPR$1=[$1])
+            LogicalValues(tuples=[[{ 3, 4 }, { 3, 2 }, { 10, 1 }]])
+          LogicalProject(PNUM=[$0])
+            LogicalValues(tuples=[[{ 3, 6 }, { 10, 1 }, { 8, 0 }]])
+]]>
+        </Resource>
+    </TestCase>
     <TestCase name="testDecorrelateTwoIn">
         <Resource name="sql">
             <![CDATA[select sal

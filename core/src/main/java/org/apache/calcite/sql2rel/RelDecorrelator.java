@@ -41,7 +41,7 @@ import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.core.Sort;
-import org.apache.calcite.rel.core.Values;
+import org.apache.calcite.rel.core.TableFunctionScan;
 import org.apache.calcite.rel.logical.LogicalAggregate;
 import org.apache.calcite.rel.logical.LogicalCorrelate;
 import org.apache.calcite.rel.logical.LogicalFilter;
@@ -430,11 +430,6 @@ public class RelDecorrelator implements ReflectiveVisitor {
 
     // Sort does not change input ordering
     return register(rel, newSort, frame.oldToNewOutputs, frame.corDefOutputs);
-  }
-
-  public Frame decorrelateRel(Values rel) {
-    // There are no inputs, so rel does not need to be changed.
-    return null;
   }
 
   public Frame decorrelateRel(LogicalAggregate rel) {
@@ -1012,6 +1007,13 @@ public class RelDecorrelator implements ReflectiveVisitor {
 
   public Frame decorrelateRel(LogicalSnapshot rel) {
     if (RexUtil.containsCorrelation(rel.getPeriod())) {
+      return null;
+    }
+    return decorrelateRel((RelNode) rel);
+  }
+
+  public Frame decorrelateRel(TableFunctionScan rel) {
+    if (RexUtil.containsCorrelation(rel.getCall())) {
       return null;
     }
     return decorrelateRel((RelNode) rel);
@@ -1701,9 +1703,19 @@ public class RelDecorrelator implements ReflectiveVisitor {
       // Use nullIndicator to decide whether to project null.
       // Do nothing if the literal is null.
       if (!RexUtil.isNull(literal)
-          && projectPulledAboveLeftCorrelator
-          && (nullIndicator != null)) {
-        return createCaseExpression(nullIndicator, null, literal);
+          && projectPulledAboveLeftCorrelator) {
+        if (nullIndicator != null) {
+          return createCaseExpression(
+              nullIndicator,
+              null,
+              literal);
+        } else {
+          return rexBuilder.makeAbstractCast(
+              typeFactory.createTypeWithNullability(
+                  literal.getType(),
+                  true),
+              literal);
+        }
       }
       return literal;
     }

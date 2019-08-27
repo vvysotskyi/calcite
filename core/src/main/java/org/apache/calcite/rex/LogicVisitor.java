@@ -19,6 +19,18 @@ package org.apache.calcite.rex;
 import org.apache.calcite.plan.RelOptUtil.Logic;
 
 import com.google.common.collect.Iterables;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelShuttle;
+import org.apache.calcite.rel.RelShuttleImpl;
+import org.apache.calcite.rel.core.TableFunctionScan;
+import org.apache.calcite.rel.core.TableScan;
+import org.apache.calcite.rel.logical.LogicalAggregate;
+import org.apache.calcite.rel.logical.LogicalFilter;
+import org.apache.calcite.rel.logical.LogicalJoin;
+import org.apache.calcite.rel.logical.LogicalMatch;
+import org.apache.calcite.rel.logical.LogicalProject;
+import org.apache.calcite.rel.logical.LogicalValues;
+import org.apache.calcite.util.Util;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -155,6 +167,9 @@ public class LogicVisitor implements RexBiVisitor<Logic, Logic> {
   }
 
   public Logic visitSubQuery(RexSubQuery subQuery, Logic arg) {
+    if (arg != Logic.TRUE_FALSE_UNKNOWN && CorrelateAboveAggFinder.containsCorrelateAboveAggregate(subQuery.rel)) {
+      arg = Logic.TRUE_FALSE_UNKNOWN;
+    }
     if (!subQuery.getType().isNullable()) {
       if (arg == Logic.TRUE_FALSE_UNKNOWN) {
         arg = Logic.TRUE_FALSE;
@@ -169,6 +184,83 @@ public class LogicVisitor implements RexBiVisitor<Logic, Logic> {
 
   @Override public Logic visitPatternFieldRef(RexPatternFieldRef ref, Logic arg) {
     return end(ref, arg);
+  }
+
+  private static class CorrelateAboveAggFinder extends RelShuttleImpl {
+
+    public static RelShuttle INSTANCE = new CorrelateAboveAggFinder();
+
+    private boolean belowAggregate = false;
+
+    public RelNode visit(LogicalAggregate aggregate) {
+      boolean belowAggregateLocal = belowAggregate;
+      belowAggregate = true;
+      RelNode relNode = super.visit(aggregate);
+      belowAggregate = belowAggregateLocal;
+      return relNode;
+    }
+
+    public RelNode visit(LogicalMatch match) {
+      if (belowAggregate) {
+        checkAndThrow(match.getPattern());
+        checkAndThrow(match.getInterval());
+        checkAndThrow(match.getAfter());
+      }
+      return super.visit(match);
+    }
+
+    public RelNode visit(TableScan scan) {
+      return scan;
+    }
+
+    public RelNode visit(TableFunctionScan scan) {
+      if (belowAggregate) {
+        checkAndThrow(scan.getCall());
+      }
+      return super.visit(scan);
+    }
+
+    public RelNode visit(LogicalValues values) {
+      return super.visit(values);
+    }
+
+    public RelNode visit(LogicalFilter filter) {
+      if (belowAggregate) {
+        checkAndThrow(filter.getCondition());
+      }
+      return super.visit(filter);
+    }
+
+    public RelNode visit(LogicalProject project) {
+      if (belowAggregate) {
+        for (RexNode rexNode : project.getProjects()) {
+          checkAndThrow(rexNode);
+        }
+      }
+      return super.visit(project);
+    }
+
+    public RelNode visit(LogicalJoin join) {
+      if (belowAggregate) {
+        checkAndThrow(join.getCondition());
+      }
+      return super.visit(join);
+    }
+
+    private static void checkAndThrow(RexNode input) {
+      if (RexUtil.containsCorrelation(input)) {
+        throw Util.FoundOne.NULL;
+      }
+    }
+
+    public static boolean containsCorrelateAboveAggregate(RelNode relNode) {
+      try {
+        relNode.accept(INSTANCE);
+        return false;
+      } catch (Util.FoundOne e) {
+        return true;
+      }
+    }
   }
 }
 

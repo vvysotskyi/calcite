@@ -720,7 +720,9 @@ public class RexSimplify {
     if (predicates.pulledUpPredicates.contains(a)) {
       return rexBuilder.makeLiteral(true);
     }
-    if (a.getKind() == SqlKind.CAST) {
+    switch (a.getKind()) {
+    case CAST:
+    case ITEM:
       return null;
     }
     switch (Strong.policy(a.getKind())) {
@@ -769,7 +771,9 @@ public class RexSimplify {
     if (RexUtil.isNull(a)) {
       return rexBuilder.makeLiteral(true);
     }
-    if (a.getKind() == SqlKind.CAST) {
+    switch (a.getKind()) {
+    case CAST:
+    case ITEM:
       return null;
     }
     switch (Strong.policy(a.getKind())) {

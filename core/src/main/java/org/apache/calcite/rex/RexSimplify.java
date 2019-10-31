@@ -600,9 +600,9 @@ public class RexSimplify {
       List<RexNode> operands = ((RexCall) a).getOperands();
       for (int i = 0; i < operands.size(); i += 2) {
         if (i + 1 == operands.size()) {
-          newOperands.add(rexBuilder.makeCall(SqlStdOperatorTable.NOT, operands.get(i + 0)));
+          newOperands.add(rexBuilder.makeCall(SqlStdOperatorTable.NOT, operands.get(i)));
         } else {
-          newOperands.add(operands.get(i + 0));
+          newOperands.add(operands.get(i));
           newOperands.add(rexBuilder.makeCall(SqlStdOperatorTable.NOT, operands.get(i + 1)));
         }
       }
@@ -734,6 +734,7 @@ public class RexSimplify {
   }
 
   private RexNode simplifyIsNotNull(RexNode a) {
+    validateStrongPolicy(a);
     // Simplify the argument first,
     // call ourselves recursively to see whether we can make more progress.
     // For example, given
@@ -746,9 +747,7 @@ public class RexSimplify {
     if (predicates.pulledUpPredicates.contains(a)) {
       return rexBuilder.makeLiteral(true);
     }
-    switch (a.getKind()) {
-    case CAST:
-    case ITEM:
+    if (hasCustomNullabilityRules(a.getKind())) {
       return null;
     }
     switch (Strong.policy(a.getKind())) {
@@ -785,6 +784,7 @@ public class RexSimplify {
   }
 
   private RexNode simplifyIsNull(RexNode a) {
+    validateStrongPolicy(a);
     // Simplify the argument first,
     // call ourselves recursively to see whether we can make more progress.
     // For example, given
@@ -797,9 +797,7 @@ public class RexSimplify {
     if (RexUtil.isNull(a)) {
       return rexBuilder.makeLiteral(true);
     }
-    switch (a.getKind()) {
-    case CAST:
-    case ITEM:
+    if (hasCustomNullabilityRules(a.getKind())) {
       return null;
     }
     switch (Strong.policy(a.getKind())) {
@@ -822,6 +820,49 @@ public class RexSimplify {
     case AS_IS:
     default:
       return null;
+    }
+  }
+
+  /**
+   * Validates strong policy for specified {@link RexNode} rex node.
+   *
+   * @param rexNode rex node whose strong policy should be validated.
+   */
+  private void validateStrongPolicy(RexNode rexNode) {
+    if (hasCustomNullabilityRules(rexNode.getKind())) {
+      return;
+    }
+    switch (Strong.policy(rexNode.getKind())) {
+    case NOT_NULL:
+      assert !rexNode.getType().isNullable();
+      break;
+    case ANY:
+      List<RexNode> operands = ((RexCall) rexNode).getOperands();
+      if (rexNode.getType().isNullable()) {
+        assert operands.stream()
+            .map(RexNode::getType)
+            .anyMatch(RelDataType::isNullable);
+      } else {
+        assert operands.stream()
+            .map(RexNode::getType)
+            .noneMatch(RelDataType::isNullable);
+      }
+    }
+  }
+
+  /**
+   * Returns {@code true} if specified {@link SqlKind} sql kind has custom nullability rules.
+   *
+   * @param sqlKind sql kind to check
+   * @return {@code true} if specified {@link SqlKind} sql kind has custom nullability rules
+   */
+  private boolean hasCustomNullabilityRules(SqlKind sqlKind) {
+    switch (sqlKind) {
+    case CAST:
+    case ITEM:
+      return true;
+    default:
+      return false;
     }
   }
 
@@ -943,7 +984,7 @@ public class RexSimplify {
         }
       }
     }
-    List<RexNode> newOperands = CaseBranch.toCaseOperands(rexBuilder, branches);
+    List<RexNode> newOperands = CaseBranch.toCaseOperands(branches);
     if (newOperands.equals(call.getOperands())) {
       return call;
     }
@@ -1001,8 +1042,7 @@ public class RexSimplify {
       return ret;
     }
 
-    private static List<RexNode> toCaseOperands(RexBuilder rexBuilder,
-        List<CaseBranch> branches) {
+    private static List<RexNode> toCaseOperands(List<CaseBranch> branches) {
       List<RexNode> ret = new ArrayList<>();
       for (int i = 0; i < branches.size() - 1; i++) {
         CaseBranch branch = branches.get(i);
@@ -1058,7 +1098,6 @@ public class RexSimplify {
       safeOps.add(SqlKind.REVERSE);
       safeOps.add(SqlKind.TIMESTAMP_ADD);
       safeOps.add(SqlKind.TIMESTAMP_DIFF);
-      safeOps.add(SqlKind.LIKE);
       this.safeOps = Sets.immutableEnumSet(safeOps);
     }
 
@@ -1160,7 +1199,7 @@ public class RexSimplify {
       branches.add(new CaseBranch(cond, value));
     }
 
-    result = simplifyBooleanCaseGeneric(rexBuilder, branches, branchType);
+    result = simplifyBooleanCaseGeneric(rexBuilder, branches);
     return result;
   }
 
@@ -1179,7 +1218,7 @@ public class RexSimplify {
    * <pre>(p1 and x) or (p2 and y and not(p1)) or (true and z and not(p1) and not(p2))</pre>
    */
   private static RexNode simplifyBooleanCaseGeneric(RexBuilder rexBuilder,
-      List<CaseBranch> branches, RelDataType outputType) {
+      List<CaseBranch> branches) {
 
     boolean booleanBranches = branches.stream()
         .allMatch(branch -> branch.value.isAlwaysTrue() || branch.value.isAlwaysFalse());

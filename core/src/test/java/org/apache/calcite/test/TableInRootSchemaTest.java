@@ -23,11 +23,16 @@ import org.apache.calcite.linq4j.Enumerator;
 import org.apache.calcite.linq4j.Linq4j;
 import org.apache.calcite.linq4j.QueryProvider;
 import org.apache.calcite.linq4j.Queryable;
+import org.apache.calcite.linq4j.tree.Expression;
+import org.apache.calcite.linq4j.tree.Expressions;
+import org.apache.calcite.linq4j.tree.MethodCallExpression;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.schema.QueryableTable;
 import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.schema.Schemas;
 import org.apache.calcite.schema.TranslatableTable;
 import org.apache.calcite.schema.impl.AbstractTableQueryable;
 import org.apache.calcite.util.Pair;
@@ -97,7 +102,8 @@ class TableInRootSchemaTest {
     private Class[] columnTypes = { String.class, Integer.class };
     private Object[][] rows = new Object[3][];
 
-    SimpleTable() {
+    // CHECKSTYLE: IGNORE 1
+    public SimpleTable() {
       super(Object[].class);
 
       rows[0] = new Object[] { "foo", 5 };
@@ -178,6 +184,22 @@ class TableInRootSchemaTest {
     public RelNode toRel(RelOptTable.ToRelContext context,
         RelOptTable relOptTable) {
       return EnumerableTableScan.create(context.getCluster(), relOptTable);
+    }
+
+    @Override public Expression getExpression(SchemaPlus schema, String tableName, Class clazz) {
+      try {
+        MethodCallExpression queryableExpression =
+            Expressions.call(Expressions.new_(SimpleTable.class.getConstructor()),
+                QueryableTable.class.getMethod(
+                    "asQueryable", QueryProvider.class, SchemaPlus.class, String.class),
+                Expressions.constant(null),
+                Schemas.expression(schema),
+                Expressions.constant(tableName));
+        return Expressions.call(queryableExpression,
+            Queryable.class.getMethod("asEnumerable"));
+      } catch (NoSuchMethodException e) {
+        throw new RuntimeException(e);
+      }
     }
   }
 }

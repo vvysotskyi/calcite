@@ -62,6 +62,7 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.runtime.FlatLists;
 import org.apache.calcite.runtime.Hook;
 import org.apache.calcite.runtime.SqlFunctions;
+import org.apache.calcite.schema.FunctionParameter;
 import org.apache.calcite.schema.ModifiableTable;
 import org.apache.calcite.schema.ModifiableView;
 import org.apache.calcite.schema.QueryableTable;
@@ -459,6 +460,34 @@ public class JdbcTest {
             + "N=3\n"
             + "N=10\n"));
     connection.close();
+  }
+
+  @Test void testQueryableTableWithTableMacro() throws SQLException {
+    try (Connection connection =
+        DriverManager.getConnection("jdbc:calcite:")) {
+
+      CalciteConnection calciteConnection =
+          connection.unwrap(CalciteConnection.class);
+      SchemaPlus rootSchema = calciteConnection.getRootSchema();
+      SchemaPlus schema = rootSchema.add("s", new AbstractSchema());
+      schema.add("simple", new TableMacro() {
+
+        @Override public TranslatableTable apply(List<?> arguments) {
+          return new TableInRootSchemaTest.SimpleTable();
+        }
+
+        @Override public List<FunctionParameter> getParameters() {
+          return Collections.emptyList();
+        }
+      });
+
+      ResultSet resultSet = connection.createStatement().executeQuery(
+          "select * from table(\"s\".\"simple\"())");
+      assertThat(CalciteAssert.toString(resultSet),
+          equalTo("A=foo; B=5\n"
+              + "A=bar; B=4\n"
+              + "A=foo; B=3\n"));
+    }
   }
 
   /** Table macro that takes a MAP as a parameter.

@@ -34,11 +34,8 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rel.type.RelProtoDataType;
 import org.apache.calcite.rel.type.RelRecordType;
 import org.apache.calcite.schema.ColumnStrategy;
-import org.apache.calcite.schema.FilterableTable;
 import org.apache.calcite.schema.ModifiableTable;
 import org.apache.calcite.schema.Path;
-import org.apache.calcite.schema.ProjectableFilterableTable;
-import org.apache.calcite.schema.QueryableTable;
 import org.apache.calcite.schema.ScannableTable;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaPlus;
@@ -118,9 +115,9 @@ public class RelOptTableImpl extends Prepare.AbstractPreparingTable {
       RelDataType rowType,
       List<String> names,
       Table table,
-      Expression expression) {
+      Function<Class, Expression> expressionFunction) {
     return new RelOptTableImpl(schema, rowType, names, table,
-        c -> expression, table.getStatistic().getRowCount());
+        expressionFunction, table.getStatistic().getRowCount());
   }
 
   public static RelOptTableImpl create(@Nullable RelOptSchema schema, RelDataType rowType,
@@ -163,22 +160,7 @@ public class RelOptTableImpl extends Prepare.AbstractPreparingTable {
 
   private static Function<Class, Expression> getClassExpressionFunction(
       final SchemaPlus schema, final String tableName, final Table table) {
-    if (table instanceof QueryableTable) {
-      final QueryableTable queryableTable = (QueryableTable) table;
-      return clazz -> queryableTable.getExpression(schema, tableName, clazz);
-    } else if (table instanceof ScannableTable
-        || table instanceof FilterableTable
-        || table instanceof ProjectableFilterableTable) {
-      return clazz -> Schemas.tableExpression(schema, Object[].class, tableName,
-          table.getClass());
-    } else if (table instanceof StreamableTable) {
-      return getClassExpressionFunction(schema, tableName,
-          ((StreamableTable) table).stream());
-    } else {
-      return input -> {
-        throw new UnsupportedOperationException();
-      };
-    }
+    return c -> Schemas.getTableExpression(schema, tableName, table, c);
   }
 
   public static RelOptTableImpl create(@Nullable RelOptSchema schema,

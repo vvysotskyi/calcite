@@ -190,8 +190,10 @@ public final class Schemas {
    *
    * @param schema    Schema
    * @param tableName Table name (unique within schema)
-   * @param table     table to be referenced
-   * @param clazz     The desired collection class; for example {@code Queryable}.
+   * @param table     Table to be referenced
+   * @param clazz     Class that provides specific methods for accessing table data.
+   *                  It may differ from the {@code table} class; for example {@code clazz} may be
+   *                  {@code MongoTable.MongoQueryable}, though {@code table} is {@code MongoTable}
    */
   public static Expression getTableExpression(SchemaPlus schema, String tableName,
       Table table, Class<?> clazz) {

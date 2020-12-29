@@ -19,7 +19,7 @@ package org.apache.calcite.sql2rel;
 import org.apache.calcite.avatica.util.Spaces;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.linq4j.Ord;
-import org.apache.calcite.linq4j.tree.Expression;
+import org.apache.calcite.linq4j.tree.TableExpressionFactory;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptPlanner;
@@ -205,7 +205,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -2630,7 +2629,7 @@ public class SqlToRelConverter {
       final RelDataType rowType = table.getRowType(typeFactory);
       CalciteSchema schema = Schemas.subSchema(
           catalogReader.getRootSchema(), udf.getNameAsId().skipLast(1).names);
-      Function<Class, Expression> expressionFunction =
+      TableExpressionFactory expressionFunction =
           clazz -> Schemas.getTableExpression(Objects.requireNonNull(schema).plus(),
               Util.last(udf.getNameAsId().names), table, clazz);
       RelOptTable relOptTable = RelOptTableImpl.create(null, rowType,

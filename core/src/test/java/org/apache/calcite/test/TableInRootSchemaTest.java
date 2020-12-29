@@ -30,11 +30,11 @@ import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
-import org.apache.calcite.schema.QueryableTable;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Schemas;
 import org.apache.calcite.schema.TranslatableTable;
 import org.apache.calcite.schema.impl.AbstractTableQueryable;
+import org.apache.calcite.util.BuiltInMethod;
 import org.apache.calcite.util.Pair;
 
 import com.google.common.collect.ImmutableMultiset;
@@ -56,7 +56,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /** Test case for issue 85. */
-class TableInRootSchemaTest {
+public class TableInRootSchemaTest {
   /** Test case for
    * <a href="https://issues.apache.org/jira/browse/CALCITE-85">[CALCITE-85]
    * Adding a table to the root schema causes breakage in
@@ -102,6 +102,8 @@ class TableInRootSchemaTest {
     private Class[] columnTypes = { String.class, Integer.class };
     private Object[][] rows = new Object[3][];
 
+    // Ignoring check for "Redundant 'public' modifier".
+    // The constructor should be public to use it from the generated code.
     // CHECKSTYLE: IGNORE 1
     public SimpleTable() {
       super(Object[].class);
@@ -190,13 +192,12 @@ class TableInRootSchemaTest {
       try {
         MethodCallExpression queryableExpression =
             Expressions.call(Expressions.new_(SimpleTable.class.getConstructor()),
-                QueryableTable.class.getMethod(
-                    "asQueryable", QueryProvider.class, SchemaPlus.class, String.class),
+                BuiltInMethod.QUERYABLE_TABLE_AS_QUERYABLE.method,
                 Expressions.constant(null),
                 Schemas.expression(schema),
                 Expressions.constant(tableName));
         return Expressions.call(queryableExpression,
-            Queryable.class.getMethod("asEnumerable"));
+            BuiltInMethod.QUERYABLE_AS_ENUMERABLE.method);
       } catch (NoSuchMethodException e) {
         throw new RuntimeException(e);
       }

@@ -36,12 +36,14 @@ import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.runtime.SqlFunctions;
 import org.apache.calcite.schema.FunctionContext;
+import org.apache.calcite.schema.FunctionParameter;
 import org.apache.calcite.schema.QueryableTable;
 import org.apache.calcite.schema.ScannableTable;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Statistic;
 import org.apache.calcite.schema.Statistics;
+import org.apache.calcite.schema.TableMacro;
 import org.apache.calcite.schema.TranslatableTable;
 import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.schema.impl.ViewTable;
@@ -49,6 +51,7 @@ import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.dialect.CalciteSqlDialect;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.test.TableInRootSchemaTest;
 
 import com.google.common.collect.ImmutableList;
 
@@ -62,6 +65,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.AbstractList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -1261,6 +1265,21 @@ public class Smalls {
     public WideProductSale(int prodId, double sale) {
       this.prodId = prodId;
       this.sale0 = sale;
+    }
+  }
+
+  /**
+   * Implementation of {@link TableMacro} interface with
+   * {@link #apply} method that returns {@link Queryable} table.
+   */
+  public static class SimpleTableMacro implements TableMacro {
+
+    @Override public TranslatableTable apply(List<?> arguments) {
+      return new TableInRootSchemaTest.SimpleTable();
+    }
+
+    @Override public List<FunctionParameter> getParameters() {
+      return Collections.emptyList();
     }
   }
 }

@@ -2630,7 +2630,7 @@ public class SqlToRelConverter {
       CalciteSchema schema = Schemas.subSchema(
           catalogReader.getRootSchema(), udf.getNameAsId().skipLast(1).names);
       TableExpressionFactory expressionFunction =
-          clazz -> Schemas.getTableExpression(Objects.requireNonNull(schema).plus(),
+          clazz -> Schemas.getTableExpression(Objects.requireNonNull(schema, "schema").plus(),
               Util.last(udf.getNameAsId().names), table, clazz);
       RelOptTable relOptTable = RelOptTableImpl.create(null, rowType,
           udf.getNameAsId().names, table, expressionFunction);
